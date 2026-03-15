@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Volatility Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            background: linear-gradient(135deg, #050a15 0%, #0d1e12 40%, #5b8c2a 100%);
+            color: #ffffff; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #root { width: 100%; max-width: 1100px; }
+        .container { 
+            display: flex; 
+            gap: 40px; 
+            background: rgba(0, 0, 0, 0.4); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 40px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5); 
+        }
+        .left-panel { flex: 1.2; display: flex; flex-direction: column; gap: 20px; text-align: center; }
+        .right-panel { flex: 1; min-height: 400px; position: relative; background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px;}
+        
+        h2 { margin: 0; color: #ffffff; font-size: 42px; font-weight: 800; letter-spacing: 1px;}
+        
+        #text-desc { 
+            font-size: 26px; 
+            color: #ffffff; 
+            margin: 10px 0 20px 0;
+            line-height: 1.6;
+            white-space: pre-line; 
+            font-weight: 600;
+        }
+
+        .portfolio { 
+            background: rgba(0, 0, 0, 0.5); 
+            padding: 20px; 
+            border-radius: 16px; 
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .portfolio p { margin: 8px 0; font-size: 18px; color: #ddd; }
+        #net-worth { font-size: 28px !important; color: #bceb49 !important; font-weight: 800; }
+        #current-price { font-size: 22px !important; color: #ffffff !important; font-weight: 800; margin-bottom: 15px; }
+        
+        .prompt-text { font-size: 24px; font-weight: 800; margin-top: 10px; margin-bottom: 5px;}
+
+        .buttons { display: flex; gap: 15px; margin-top: auto; }
+        button { 
+            flex: 1; 
+            padding: 16px; 
+            font-size: 24px; 
+            font-weight: 800; 
+            font-family: 'Nunito', sans-serif;
+            border: none; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s; 
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:active { transform: translateY(6px); box-shadow: 0 0px 0 rgba(0,0,0,0.2); }
+        button:hover { opacity: 0.9; }
+        
+        .btn-buy { background: #bceb49; color: #000; }
+        .btn-sell { background: #e05c5c; color: #fff; }
+        .btn-hold { background: #f7eb65; color: #000; }
+        
+        .group-credits {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        #game-over-screen { 
+            display: none; 
+            text-align: center; 
+            background: rgba(0, 0, 0, 0.6); 
+            backdrop-filter: blur(15px);
+            padding: 60px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+        }
+        #game-over-screen h2 { font-size: 48px; margin-bottom: 20px; color: white;}
+        #game-over-screen button { background: #bceb49; color: #000; margin-top: 40px; width: 50%; padding: 20px; font-size: 24px;}
+        #game-over-screen ul { text-align: left; font-size: 24px; color: #eee; max-width: 450px; margin: 0 auto; line-height: 1.8;}
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { 
+                flex-direction: column; 
+                padding: 20px; 
+                gap: 20px;
+            }
+            .left-panel { gap: 10px; }
+            .right-panel { min-height: 250px; padding: 10px; }
+            
+            h2 { font-size: 28px; }
+            #text-desc { font-size: 18px; margin: 10px 0; }
+            .prompt-text { font-size: 18px; }
+            
+            .buttons { gap: 10px; }
+            button { padding: 12px; font-size: 16px; border-radius: 12px; }
+            
+            .portfolio { padding: 15px; }
+            .portfolio p { font-size: 16px; }
+            #net-worth { font-size: 22px !important; }
+            #current-price { font-size: 18px !important; margin-bottom: 10px; }
+
+            #game-over-screen { padding: 30px 20px; }
+            #game-over-screen h1 { font-size: 60px !important; margin-bottom: 10px; }
+            #game-over-screen h2 { font-size: 28px; }
+            #final-net-worth { font-size: 26px !important; }
+            #game-over-screen ul { font-size: 18px; padding-left: 20px; }
+            #game-over-screen button { width: 100%; font-size: 20px; margin-top: 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="container" id="main-ui">
+            <div class="left-panel">
+                <h2 id="headline">Ready to Trade?</h2>
+                <div id="text-desc">You have $100. The market is open.</div>
+                
+                <div class="prompt-text">Would you like to :</div>
+                
+                <div class="buttons">
+                    <button class="btn-buy" onclick="handleBuy()">BUY</button>
+                    <button class="btn-sell" onclick="handleSell()">SELL</button>
+                    <button class="btn-hold" onclick="handleHold()">HOLD</button>
+                </div>
+
+                <div class="portfolio" style="margin-top: 10px;">
+                    <p id="net-worth">Net Worth: $100.00</p>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;"/>
+                    <p id="current-price">📈 Current Price: $100.00</p>
+                    <p id="cash-balance">💵 Cash: $100.00</p>
+                    <p id="crypto-owned">🪙 Crypto: 0.00 units</p>
+                </div>
+                
+                <div class="group-credits">Created by Group F (EG1001)</div>
+            </div>
+            <div class="right-panel">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+
+        <div id="game-over-screen">
+            <h1 style="font-size: 80px; margin: 0;">🤯</h1>
+            <h2>Crypto markets are unpredictable</h2>
+            <p id="final-net-worth" style="font-size: 38px; margin: 20px 0; color: #bceb49; font-weight: 800;">
+                Your Final Value: $0.00
+            </p>
+            <ul>
+                <li>Prices react strongly to news</li>
+                <li>Rapid booms and crashes happen</li>
+                <li>Volatility is a major concern</li>
+            </ul>
+            <button onclick="resetGame()">Play Again</button>
+            
+            <div class="group-credits" style="margin-top: 30px;">Created by Group F (EG1001)</div>
+        </div>
+    </div>
+
+    <script>
+        const events = [
+            { step: 0, name: 'Start', price: 100, headline: 'Ready to Trade?', text: 'You have $100.\nThe market is open.' },
+            { step: 1, name: 'Tesla', price: 113, headline: 'Big news!', text: '⚠️ Tesla buys $1.5B in Bitcoin\n\n📈 Bitcoin jumps +13% !!!' },
+            { step: 2, name: 'China', price: 56.5, headline: 'Uh oh...', text: '⚠️ China bans crypto mining\n\n📉 Bitcoin drops -50% !!!' },
+            { step: 3, name: 'Institutions', price: 73.45, headline: 'Wait... it goes up!', text: '🏦 Big institutions enter the market\n\n📈 Bitcoin rises +30% !!!' },
+            { step: 4, name: 'FTX', price: 55.82, headline: 'Another shock...', text: '⚠️ Major crypto exchange collapses\n\n📉 Bitcoin falls -24% !!!' }
+        ];
+
+        let step = 0;
+        let cash = 100;
+        let crypto = 0;
+        let myChart;
+
+        function initChart() {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            Chart.defaults.color = '#ffffff';
+            Chart.defaults.font.family = "'Nunito', sans-serif";
+            Chart.defaults.font.size = window.innerWidth < 768 ? 10 : 14;
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [events[0].name],
+                    datasets: [{
+                        label: 'Bitcoin Price',
+                        data: [events[0].price],
+                        borderColor: '#bceb49', 
+                        backgroundColor: 'rgba(188, 235, 73, 0.2)',
+                        borderWidth: 4,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#bceb49',
+                        pointBorderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 0, max: 150, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { grid: { color: 'rgba(255,255,255,0.1)' } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleFont: { size: window.innerWidth < 768 ? 14 : 16 },
+                            bodyFont: { size: window.innerWidth < 768 ? 14 : 16 },
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return '$' + context.parsed.y.toFixed(2); }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateUI() {
+            const currentEvent = events[step];
+            const netWorth = cash + (crypto * currentEvent.price);
+
+            document.getElementById('headline').innerText = currentEvent.headline;
+            document.getElementById('text-desc').innerText = currentEvent.text;
+            document.getElementById('net-worth').innerText = `Net Worth: $${netWorth.toFixed(2)}`;
+            document.getElementById('current-price').innerText = `📈 Current Price: $${currentEvent.price.toFixed(2)}`;
+            document.getElementById('cash-balance').innerText = `💵 Cash: $${cash.toFixed(2)}`;
+            document.getElementById('crypto-owned').innerText = `🪙 Crypto: ${crypto.toFixed(4)} units`;
+
+            myChart.data.labels = events.slice(0, step + 1).map(e => e.name);
+            myChart.data.datasets[0].data = events.slice(0, step + 1).map(e => e.price);
+            myChart.update();
+
+            if (step === events.length - 1) {
+                setTimeout(() => {
+                    document.getElementById('main-ui').style.display = 'none';
+                    document.getElementById('game-over-screen').style.display = 'block';
+                    document.getElementById('final-net-worth').innerText = `Your Final Value: $${netWorth.toFixed(2)}`;
+                }, 1800); 
+            }
+        }
+
+        // --- UPDATED GAME LOGIC WITH ALERTS ---
+        function handleBuy() { 
+            if (cash <= 0) { 
+                alert("❌ You don't have any cash left! You must choose SELL or HOLD.");
+                return; // Stops the function so the turn doesn't advance
+            }
+            crypto += (cash / events[step].price); 
+            cash = 0; 
+            advanceStep(); 
+        }
+
+        function handleSell() { 
+            if (crypto <= 0) { 
+                alert("❌ You don't own any Bitcoin to sell! You must choose BUY or HOLD.");
+                return; // Stops the function so the turn doesn't advance
+            }
+            cash += (crypto * events[step].price); 
+            crypto = 0; 
+            advanceStep(); 
+        }
+
+        function handleHold() { 
+            advanceStep(); 
+        }
+        // --------------------------------------
+
+        function advanceStep() {
+            if (step < events.length - 1) {
+                step++;
+                updateUI();
+            }
+        }
+
+        function resetGame() {
+            step = 0; cash = 100; crypto = 0;
+            document.getElementById('main-ui').style.display = 'flex';
+            document.getElementById('game-over-screen').style.display = 'none';
+            updateUI();
+        }
+
+        window.addEventListener('resize', () => {
+            if (myChart) {
+                myChart.options.plugins.tooltip.titleFont.size = window.innerWidth < 768 ? 14 : 16;
+                myChart.options.plugins.tooltip.bodyFont.size = window.innerWidth < 768 ? 14 : 16;
+                Chart.defaults.font.size = window.innerWidth < 768 ? 10 : 14;
+                myChart.update();
+            }
+        });
+
+        window.onload = () => { initChart(); updateUI(); };
+    </script>
+</body>
+</html>
